@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poker Night Calculator</title>
+<style>
+  :root {
+    --bg: #fdf8f3;
+    --card: #ffffff;
+    --ink: #4a4458;
+    --muted: #8d869a;
+    --line: #eee6f0;
+    --mint: #d7f2e3;
+    --mint-ink: #2f7a55;
+    --peach: #ffe6d5;
+    --peach-ink: #a8561f;
+    --lav: #e6e0fa;
+    --lav-ink: #5b4aa8;
+    --rose: #fde0e6;
+    --rose-ink: #b23a57;
+    --sky: #dcecfb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  section {
+    background: var(--card); border-radius: 16px; padding: 18px 20px;
+    margin-bottom: 16px; box-shadow: 0 2px 10px rgba(120, 100, 150, .08);
+  }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  h2 .n {
+    display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center;
+    background: var(--lav); color: var(--lav-ink); border-radius: 50%; font-size: 13px; margin-right: 8px;
+  }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > label { flex: 1 1 160px; }
+  label { display: block; font-size: 13px; color: var(--muted); }
+  input, select, textarea {
+    width: 100%; margin-top: 4px; padding: 9px 11px; font: inherit; color: var(--ink);
+    background: #fffdfb; border: 1.5px solid var(--line); border-radius: 10px; outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #c5b8f0; background: #fff; }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 10px;
+    padding: 9px 16px; background: var(--lav); color: var(--lav-ink); transition: filter .15s;
+  }
+  button:hover { filter: brightness(.96); }
+  button.mint { background: var(--mint); color: var(--mint-ink); }
+  button.ghost { background: transparent; color: var(--muted); font-weight: 500; }
+  button.x { padding: 2px 8px; background: var(--rose); color: var(--rose-ink); }
+  .hint { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .pill {
+    display: inline-block; background: var(--sky); border-radius: 999px;
+    padding: 3px 12px; font-size: 13px; margin: 10px 6px 0 0;
+  }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; }
+  td input { margin: 0; padding: 6px 8px; text-align: right; max-width: 150px; }
+  .pos { color: var(--mint-ink); font-weight: 600; }
+  .neg { color: var(--rose-ink); font-weight: 600; }
+  .tableWrap { overflow-x: auto; }
+  .log { list-style: none; padding: 0; margin: 12px 0 0; }
+  .log li {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    background: var(--peach); color: var(--peach-ink); border-radius: 10px;
+    padding: 8px 12px; margin-bottom: 6px;
+  }
+  .pay {
+    background: var(--mint); color: var(--mint-ink); border-radius: 10px;
+    padding: 10px 14px; margin-top: 8px; font-weight: 600;
+  }
+  .warn { background: var(--rose); color: var(--rose-ink); border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
+  .ok { background: var(--mint); color: var(--mint-ink); border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
+  .denoms { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-top: 6px; }
+  .denoms label { background: var(--sky); border-radius: 10px; padding: 8px 10px; }
+  .denoms b { color: var(--ink); font-size: 15px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+  .tags input { width: 180px; margin: 0; }
+  .tag { background: var(--lav); color: var(--lav-ink); border-radius: 999px; padding: 4px 6px 4px 12px; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+  .tag button { padding: 0 7px; background: #fff8; color: var(--lav-ink); border-radius: 50%; }
+  input[readonly] { background: var(--bg); }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div>
+      <h1>♠ Poker Night Calculator</h1>
+      <p class="sub">Buy-ins, re-buys and final payouts for your home game.</p>
+    </div>
+    <button class="ghost" id="reset">Reset all</button>
+  </div>
+
+  <section>
+    <h2><span class="n">1</span>Setup</h2>
+    <label>Chips in your set <span class="hint">(how many of each denomination)</span></label>
+    <div class="denoms" id="denoms"></div>
+    <div class="row" style="margin-top:12px">
+      <label>Total chip value <input id="totalChips" type="text" readonly></label>
+      <label>Worth in ₹ (whole set)
+        <input id="totalInr" type="number" min="0" value="2500">
+      </label>
+    </div>
+    <label style="margin-top:12px">Players <span class="hint">(type a name and press Enter)</span></label>
+    <div class="tags" id="tags">
+      <input id="nameInput" type="text" placeholder="Add player…" autocomplete="off">
+      <button class="mint" id="addName" type="button">Add</button>
+    </div>
+    <div id="setupOut"></div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>Re-buys</h2>
+    <div class="row">
+      <label>Who is buying?<select id="rbBuyer"></select></label>
+      <label>Cash amount (₹)<input id="rbAmt" type="number" min="0" placeholder="500"></label>
+      <label>Buying from<select id="rbSeller"></select></label>
+    </div>
+    <div class="hint" id="rbPreview"></div>
+    <div style="margin-top:12px"><button class="mint" id="addRb">+ Add re-buy</button></div>
+    <ul class="log" id="rbLog"></ul>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>End-game settlement</h2>
+    <p class="hint" style="margin-top:0">Count everyone's chips at the end and enter them below.</p>
+    <div class="tableWrap"><table>
+      <thead><tr>
+        <th>Player</th><th class="num">Invested</th><th class="num">Final chips</th><th class="num">Chip value</th><th class="num">Net</th>
+      </tr></thead>
+      <tbody id="settleBody"></tbody>
+    </table></div>
+    <div id="chipCheck"></div>
+    <div id="payouts"></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = "pokerCalc.v1";
+const DENOMS = [10, 25, 50, 100, 500, 1000];
+let state = {
+  totalInr: 2500,
+  counts: { 10: 500, 25: 0, 50: 500, 100: 500, 500: 340, 1000: 0 },
+  players: ["Player A", "Player B", "Player C", "Player D", "Player E"],
+  rebuys: [], finals: {}
+};
+
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+  if (saved && typeof saved === "object") Object.assign(state, saved);
+} catch (e) {}
+if (!Array.isArray(state.players)) state.players = [];
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+const totalChips = () => DENOMS.reduce((s, d) => s + d * (+state.counts[d] || 0), 0);
+
+function addPlayers(text) {
+  for (const raw of text.split(/[\n,]+/)) {
+    const name = raw.trim();
+    if (name && !state.players.some(p => p.toLowerCase() === name.toLowerCase())) state.players.push(name);
+  }
+}
+
+const r2 = n => Math.round(n * 100) / 100;
+const inr = n => (n < 0 ? "-" : "") + "₹" + Math.abs(r2(n)).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+const num = n => Math.round(n).toLocaleString("en-IN");
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const players = () => state.players;
+const rate = () => totalChips() > 0 ? state.totalInr / totalChips() : 0; // ₹ per chip
+
+function render() {
+  const P = players(), n = P.length;
+  $("totalChips").value = num(totalChips());
+  if (document.activeElement !== $("totalInr")) $("totalInr").value = state.totalInr;
+  if (!$("denoms").children.length)
+    $("denoms").innerHTML = DENOMS.map(d =>
+      `<label><b>${d}</b> × <input type="number" min="0" step="1" data-denom="${d}"></label>`).join("");
+  $("denoms").querySelectorAll("input").forEach(i => {
+    if (document.activeElement !== i) i.value = state.counts[i.dataset.denom] ?? 0;
+  });
+  $("tags").querySelectorAll(".tag").forEach(t => t.remove());
+  $("nameInput").before(...P.map(p => {
+    const t = document.createElement("span");
+    t.className = "tag";
+    t.innerHTML = `${esc(p)} <button type="button" data-rm="${esc(p)}" title="Remove">✕</button>`;
+    return t;
+  }));
+
+  // drop re-buys that reference removed players
+  state.rebuys = state.rebuys.filter(r => P.includes(r.buyer) && P.includes(r.seller));
+
+  // setup output
+  $("setupOut").innerHTML = n
+    ? `<span class="pill">${n} players</span>
+       <span class="pill">Each gets <b>${num(totalChips() / n)}</b> chips</span>
+       <span class="pill">Buy-in <b>${inr(state.totalInr / n)}</b></span>
+       <span class="pill">1 chip = ₹${+rate().toFixed(5)}</span>`
+    : `<div class="hint">Add at least two players.</div>`;
+
+  // selects (keep selection)
+  for (const [id, skip] of [["rbBuyer"], ["rbSeller"]]) {
+    const el = $(id), cur = el.value;
+    el.innerHTML = P.map(p => `<option>${esc(p)}</option>`).join("");
+    if (P.includes(cur)) el.value = cur;
+  }
+  if (n > 1 && $("rbBuyer").value === $("rbSeller").value) $("rbSeller").selectedIndex = ($("rbBuyer").selectedIndex + 1) % n;
+
+  // per-player numbers
+  const init = n ? state.totalInr / n : 0;
+  const inv = Object.fromEntries(P.map(p => [p, init]));
+  for (const r of state.rebuys) { inv[r.buyer] += r.amount; inv[r.seller] -= r.amount; }
+
+  renderPreview();
+
+  $("rbLog").innerHTML = state.rebuys.map((r, i) =>
+    `<li><span><b>${esc(r.buyer)}</b> bought ${inr(r.amount)} (${num(r.amount / rate())} chips) from <b>${esc(r.seller)}</b></span>
+     <button class="x" data-del="${i}" title="Remove">✕</button></li>`).join("");
+
+  $("settleBody").innerHTML = P.map(p => {
+    const f = state.finals[p];
+    const val = (f || 0) * rate(), net = val - inv[p];
+    return `<tr>
+      <td>${esc(p)}</td>
+      <td class="num">${inr(inv[p])}</td>
+      <td class="num"><input type="number" min="0" data-final="${esc(p)}" value="${f ?? ""}" placeholder="0"></td>
+      <td class="num">${inr(val)}</td>
+      <td class="num ${net >= 0 ? "pos" : "neg"}">${net >= 0 ? "+" : ""}${inr(net)}</td></tr>`;
+  }).join("");
+
+  updateSettlement(P, inv);
+  save();
+}
+
+function updateSettlement(P, inv) {
+  const total = P.reduce((s, p) => s + (+state.finals[p] || 0), 0);
+  const entered = P.some(p => state.finals[p] !== undefined && state.finals[p] !== "");
+  let html = "";
+  if (entered) {
+    const diff = total - totalChips();
+    html = diff === 0
+      ? `<div class="ok">Chip count matches the set (${num(total)}) ✓</div>`
+      : `<div class="warn">Counted ${num(total)} chips, set has ${num(totalChips())} — ${diff > 0 ? num(diff) + " too many" : num(-diff) + " missing"}. Recount before settling.</div>`;
+  }
+  $("chipCheck").innerHTML = html;
+
+  // payouts: greedy match of biggest debtor to biggest creditor
+  const nets = P.map(p => ({ p, v: r2((+state.finals[p] || 0) * rate() - inv[p]) }));
+  const debt = nets.filter(x => x.v < -0.005).map(x => ({ ...x, v: -x.v })).sort((a, b) => b.v - a.v);
+  const cred = nets.filter(x => x.v > 0.005).sort((a, b) => b.v - a.v);
+  const tx = [];
+  let i = 0, j = 0;
+  while (i < debt.length && j < cred.length) {
+    const amt = r2(Math.min(debt[i].v, cred[j].v));
+    if (amt > 0) tx.push(`${esc(debt[i].p)} pays ${esc(cred[j].p)} <span style="float:right">${inr(amt)}</span>`);
+    debt[i].v = r2(debt[i].v - amt); cred[j].v = r2(cred[j].v - amt);
+    if (debt[i].v <= 0.005) i++;
+    if (cred[j].v <= 0.005) j++;
+  }
+  $("payouts").innerHTML = entered
+    ? `<h2 style="margin-top:18px">Payouts</h2>` + (tx.length ? tx.map(t => `<div class="pay">${t}</div>`).join("") : `<div class="hint">Everyone is even — no payments needed.</div>`)
+    : "";
+}
+
+function renderPreview() {
+  const amt = +$("rbAmt").value, b = $("rbBuyer").value, s = $("rbSeller").value;
+  $("rbPreview").textContent = amt > 0 && rate() > 0
+    ? `${b} gets ${num(amt / rate())} chips from ${s}. ${s}'s investment drops by ${inr(amt)}; ${b}'s rises by ${inr(amt)}.`
+    : "Chips are worked out automatically from the cash amount.";
+}
+
+// events
+$("totalInr").addEventListener("input", e => { state.totalInr = +e.target.value || 0; render(); });
+$("denoms").addEventListener("input", e => {
+  const d = e.target.dataset.denom;
+  if (d !== undefined) { state.counts[d] = Math.max(0, Math.floor(+e.target.value || 0)); render(); }
+});
+
+function commitName() {
+  const inp = $("nameInput");
+  if (inp.value.trim()) { addPlayers(inp.value); inp.value = ""; render(); }
+  inp.focus();
+}
+$("addName").onclick = commitName;
+$("nameInput").addEventListener("keydown", e => {
+  if (e.key === "Enter" || e.key === ",") { e.preventDefault(); commitName(); }
+  else if (e.key === "Backspace" && !e.target.value && state.players.length) { state.players.pop(); render(); }
+});
+$("nameInput").addEventListener("paste", e => {
+  const t = (e.clipboardData || window.clipboardData).getData("text");
+  if (/[\n,]/.test(t)) { e.preventDefault(); addPlayers(t); render(); }
+});
+$("tags").addEventListener("click", e => {
+  const rm = e.target.dataset.rm;
+  if (rm !== undefined) { state.players = state.players.filter(p => p !== rm); render(); $("nameInput").focus(); }
+});
+["rbAmt", "rbBuyer", "rbSeller"].forEach(id => $(id).addEventListener("input", renderPreview));
+
+$("addRb").onclick = () => {
+  const buyer = $("rbBuyer").value, seller = $("rbSeller").value, amount = +$("rbAmt").value;
+  if (!buyer || !seller) return alert("Add players first.");
+  if (buyer === seller) return alert("Buyer and seller must be different players.");
+  if (!(amount > 0)) return alert("Enter a cash amount greater than 0.");
+  state.rebuys.push({ buyer, seller, amount });
+  $("rbAmt").value = "";
+  render();
+};
+
+$("rbLog").addEventListener("click", e => {
+  const d = e.target.dataset.del;
+  if (d !== undefined) { state.rebuys.splice(+d, 1); render(); }
+});
+
+$("settleBody").addEventListener("input", e => {
+  const p = e.target.dataset.final;
+  if (p === undefined) return;
+  state.finals[p] = e.target.value === "" ? undefined : +e.target.value;
+  // update without rebuilding inputs so typing isn't interrupted
+  const P = players(), init = state.totalInr / P.length;
+  const inv = Object.fromEntries(P.map(q => [q, init]));
+  for (const r of state.rebuys) { inv[r.buyer] += r.amount; inv[r.seller] -= r.amount; }
+  e.target.closest("tr").querySelectorAll("td")[3].textContent = inr((+e.target.value || 0) * rate());
+  const net = (+e.target.value || 0) * rate() - inv[p], cell = e.target.closest("tr").querySelectorAll("td")[4];
+  cell.textContent = (net >= 0 ? "+" : "") + inr(net);
+  cell.className = "num " + (net >= 0 ? "pos" : "neg");
+  updateSettlement(P, inv);
+  save();
+});
+
+$("reset").onclick = () => {
+  if (!confirm("Clear everything and start a new game?")) return;
+  state.rebuys = []; state.finals = {};
+  render();
+};
+
+render();
+</script>
+</body>
+</html>
